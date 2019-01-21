@@ -14,7 +14,7 @@ app = Flask(__name__)
 client_id = '3acb1841e1ff42e784708fe06a5e932e'
 client_secret = 'c7ce2a5f57d242ffa0a0c28402ce7377'
 
-redirect_uri = 'http://127.0.0.1:5000/callback'
+redirect_uri = 'https://pure-escarpment-60201.herokuapp.com/callback'
 
 authorize_uri = 'https://accounts.spotify.com/authorize'
 token_uri = 'https://accounts.spotify.com/api/token'
