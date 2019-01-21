@@ -1,0 +1,1 @@
+lessc ./custom/custom_theme.less ./static/css/app.css

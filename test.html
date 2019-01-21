@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SVG.js</title>
+</head>
+<body>
+  <div id="drawing"></div>
+  <script src="static/js/svg.min.js"></script>
+  <script>
+  var draw = SVG('drawing').size(320,600)
+
+var circleOne = draw.circle(12).move(4, 4).fill('#8eb021')
+
+//change color on click
+circleOne.click(function() {
+  this.fill({ color: '#f06' })
+})
+  </script>
+</body>
+</html>
