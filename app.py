@@ -72,3 +72,7 @@ def authenticate():
 @app.route("/explore")
 def explore():
     return app.send_static_file('explore.html')
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
