@@ -72,6 +72,3 @@ def authenticate():
 @app.route("/explore")
 def explore():
     return app.send_static_file('explore.html')
-
-if __name__ is '__main__':
-    app.run(host='0.0.0.0')
