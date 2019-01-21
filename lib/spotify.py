@@ -83,6 +83,7 @@ def create_playlist(genre, user_id, db):
         add_tracks_response = http.post(add_tracks_playlist_url, data=json.dumps({
             'uris': ['spotify:track:' + x for x in request_ids]
         }), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
+        print(add_tracks_response)
 
 def get_genre_counts(user_id, db):
     # this function returns the user's genre count, but it also stores the user's 
