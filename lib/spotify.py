@@ -4,11 +4,32 @@ import json
 from collections import Counter
 
 library_tracks_url = 'https://api.spotify.com/v1/me/tracks?limit=50&offset='
+single_track_url = 'https://api.spotify.com/v1/tracks/'
 artists_info_url = 'https://api.spotify.com/v1/artists?ids='
 me_info_url = 'https://api.spotify.com/v1/me'
 
 def get_request(url, access_token):
     return http.get(url, headers={'Authorization': 'Bearer ' + access_token})
+
+def get_access_token(user_id):
+    return os.environ[user_id]
+
+def get_song_genre(user_id, song_id):
+    access_token = get_access_token(user_id)
+    track = get_request(single_track_url + song_id, access_token).json()
+
+    artists = []
+    for artist_obj in track['artists']:
+        artists.append(artist_obj['id'])
+
+    artists_data = get_request(artists_info_url + ','.join(artists), access_token).json()
+    print(artists_data)
+    genres = []
+    for artist in artists_data['artists']:
+        print(artist)
+        genres += artist['genres']
+    
+    return set(genres)
 
 def construct_user_library(access_token, db):
     first_response = get_request(library_tracks_url + '0', access_token).json()
@@ -61,7 +82,7 @@ def construct_user_library(access_token, db):
 
 def create_playlist(genre, user_id, db):
     library = json.loads(db.get(user_id).decode('utf-8'))
-    access_token = os.environ[user_id]
+    access_token = get_access_token(user_id)
     user_id = get_request(me_info_url, access_token).json()['id']
 
     create_playlist_url = 'https://api.spotify.com/v1/users/{0}/playlists'.format(user_id)
@@ -88,7 +109,7 @@ def create_playlist(genre, user_id, db):
 def get_genre_counts(user_id, db):
     # this function returns the user's genre count, but it also stores the user's 
     # library in redis
-    access_token = os.environ[user_id]
+    access_token = get_access_token(user_id)
     library, genre_counter = construct_user_library(access_token, db)
     db.set(user_id, json.dumps(library))
     return genre_counter

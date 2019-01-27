@@ -1,12 +1,13 @@
 from flask import Flask, redirect, request
 from redis import Redis
 import os
+import sys
 import requests as http
 import json
 import random
 from collections import Counter
 from base64 import b64encode
-from lib.spotify import get_genre_counts, create_playlist
+from lib.spotify import get_genre_counts, create_playlist, get_song_genre
 from urllib.parse import urlparse
 
 app = Flask(__name__)
@@ -14,13 +15,19 @@ app = Flask(__name__)
 client_id = '3acb1841e1ff42e784708fe06a5e932e'
 client_secret = 'c7ce2a5f57d242ffa0a0c28402ce7377'
 
+
 redirect_uri = 'https://pure-escarpment-60201.herokuapp.com/callback'
+# debug or prod mode
+LOCAL = False
+if len(sys.argv) > 1:
+    if sys.argv[1] == 'debug':
+        print('LOCAL VERSION')
+        redirect_uri = 'http://127.0.0.1:5000/callback'
+        LOCAL = True
 
 authorize_uri = 'https://accounts.spotify.com/authorize'
 token_uri = 'https://accounts.spotify.com/api/token'
 
-# fix this for later
-LOCAL = False
 if LOCAL:
     db = Redis()
 else:
@@ -41,6 +48,15 @@ def genre_count():
     counter = get_genre_counts(user_id, db)
     response = json.dumps(dict(counter))
     return response
+
+@app.route('/api/song_genre')
+def song_genre():
+    user_id = request.args.get('u')
+    song_id = request.args.get('song_id')
+    genres = get_song_genre(user_id, song_id)
+    return json.dumps(list(genres))
+
+
 ## OAUTH2 
 
 @app.route("/")
@@ -75,4 +91,4 @@ def explore():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=LOCAL)

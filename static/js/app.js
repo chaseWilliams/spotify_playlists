@@ -11,7 +11,7 @@ var app = new Vue({
     },
     methods: {
         create_playlist: function () {
-            $.ajax('/api/create_playlist?u=' + url_params.get('u') + '&genre=' + this.genre)
+            $.ajax('/api/create_playlist?u=' + url_params.get('u') + '&genre=' + encodeURIComponent(this.genre))
         }
     }
 })
