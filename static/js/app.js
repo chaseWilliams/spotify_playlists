@@ -7,11 +7,59 @@ url_params = new URLSearchParams(window.location.search)
 var app = new Vue({
     el: '#app',
     data: {
-        genre: ''
+        genre_query: '',
+        circles: [],
+        all_circles: []
     },
     methods: {
         create_playlist: function () {
-            $.ajax('/api/create_playlist?u=' + url_params.get('u') + '&genre=' + encodeURIComponent(this.genre))
+            $.ajax('/api/create_playlist?u=' + url_params.get('u') + '&genres=' + encodeURIComponent(this.genres_string_list))
+        },
+        // set all circles back to pink, remove from circles array
+        unselect_genres: function () {
+            for (var i = 0; i < this.circles.length; i++) {
+                this.circles[i].fill({color: '#f06'});
+            }
+            this.circles = [];
+        },
+        select_genre: function (genre) {
+            for (var i = 0; i < this.all_circles.length; i++) {
+                var circle = this.all_circles[i]
+                if (circle.genre === genre) {
+                    this.circles.push(circle)
+                    break
+                }
+            }
+        }
+    },
+    computed: {
+        genres_display: function () {
+            var str = '';
+            for (var i = 0; i < this.circles.length; i++) {
+                str += this.circles[i].genre + ', '
+            }
+            return str.substring(0, str.length - 2)
+        },
+        genres_string_list: function () {
+            var str = '';
+            for (var i = 0; i < this.circles.length; i++) {
+                str += this.circles[i].genre + ','
+            }
+            return str.substring(0, str.length - 1)
+        },
+        genre_matches: function () {
+            if (this.genre_query != "") {
+                var matches = []
+                for (var i = 0; i < this.all_circles.length; i++) {
+                    var genre = this.all_circles[i].genre
+                    if (genre.includes(this.genre_query)) {
+                        matches.push(genre)
+                    }
+                }
+                return matches
+            } else {
+                return []
+            }
         }
     }
 })
@@ -123,18 +171,24 @@ function create_visual(library_data) {
 // additional helper functions
 // ---------------------------
 
+// sets up the circle
 function draw_circle(point, genre) {
     var _circle = draw.circle(point.r * 2).move(point.cx - point.r, point.cy - point.r).attr({fill: '#f06'})
     _circle.genre = genre
+    _circle.selected = false
     _circle.mouseover(function() {
         this.fill({ color: '#000' })
     })
     _circle.mouseout(function() {
-        this.fill({color: '#f06'})
+        if (!this.selected)
+            this.fill({color: '#f06'})
     })
     _circle.click(function() {
-        app.genre = this.genre
+        this.fill({color: '#000'})
+        this.selected = true
+        app.circles.push(this)
       })
+    app.all_circles.push(_circle)
     return _circle
 }
 

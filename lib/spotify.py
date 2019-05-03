@@ -80,22 +80,24 @@ def construct_user_library(access_token, db):
         track_obj['genres'] = track_genres
     return library, Counter(genres)
 
-def create_playlist(genre, user_id, db):
+def create_playlist(genres, user_id, db):
     library = json.loads(db.get(user_id).decode('utf-8'))
     access_token = get_access_token(user_id)
     user_id = get_request(me_info_url, access_token).json()['id']
 
     create_playlist_url = 'https://api.spotify.com/v1/users/{0}/playlists'.format(user_id)
 
-    create_response = http.post(create_playlist_url, data=json.dumps({'name': genre}), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
+    create_response = http.post(create_playlist_url, data=json.dumps({'name': ','.join(genres)}), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
 
     playlist_id = create_response['id']
     add_tracks_playlist_url = 'https://api.spotify.com/v1/playlists/{0}/tracks'.format(playlist_id)
 
     playlist_track_ids = []
     for track_obj in library:
-        if genre in track_obj['genres']:
-            playlist_track_ids.append(track_obj['id'])
+        for genre in genres:
+            # if genre in track obj and not already added
+            if genre in track_obj['genres'] and track_obj['id'] not in playlist_track_ids:
+                playlist_track_ids.append(track_obj['id'])
 
     ## TODO:
     # randomize the playlist tracks? right now it is in chronological order (added date)

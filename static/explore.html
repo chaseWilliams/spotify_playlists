@@ -20,13 +20,30 @@
 </nav>
 <div>
 <div class="uk-text-center" uk-grid>
-    <div>
+    <div class="uk-width-1-2@m">
         <div id="drawing"></div>
     </div>
-    <div id="app">
+    <div id="app" class="uk-width-1-2@m">
         <h1>Genre</h1>
-        <h3>{{genre}}</h3>
-        <button v-on:click="create_playlist()">Create this Playlist</button>
+        <div style="max-width: 100%;">
+            <h3>{{genres_display}}</h3>
+        </div>
+        <div class="uk-grid-large" uk-grid>
+            <div class="uk-width-1-2@m">
+                <button v-on:click="create_playlist()">Create this Playlist</button>
+            </div>
+            <div class="uk-width-1-2@m">
+                <button v-on:click="unselect_genres()">Unselect Genres</button>
+            </div>
+        </div>
+        <p>Search for a genre</p>
+        <input v-model="genre_query">
+        <ul>
+            <li style="list-style: none;" v-for="genre in genre_matches">
+                <a v-on:click="select_genre(genre)">{{ genre }}</a>
+            </li>
+        </ul>
+        <!-- TOOD: add functionality to get genres for a user-provided spotify artist -->
     </div>
 </div>
 </div>

@@ -38,8 +38,8 @@ else:
 @app.route('/api/create_playlist')
 def api_create_playlist():
     user_id = request.args.get('u')
-    genre = request.args.get('genre')
-    create_playlist(genre, user_id, db)
+    genres = request.args.get('genres')
+    create_playlist(genres.split(','), user_id, db)
     return 'success'
 
 @app.route('/api/genre_count')
