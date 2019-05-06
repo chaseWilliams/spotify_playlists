@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request
+from flask import Flask, redirect, request, g
 from redis import Redis
 import os
 import sys
@@ -6,15 +6,14 @@ import requests as http
 import json
 import random
 from collections import Counter
-from base64 import b64encode
-from lib.spotify import get_genre_counts, create_playlist, get_song_genre
+from lib.spotify import get_genre_counts, create_playlist, get_song_genre, refresh_master_access_token
+from lib.database import get_db
 from urllib.parse import urlparse
 
 app = Flask(__name__)
-
-client_id = '3acb1841e1ff42e784708fe06a5e932e'
-client_secret = 'c7ce2a5f57d242ffa0a0c28402ce7377'
-
+###
+# INITIAL SET UP
+###
 
 redirect_uri = 'https://pure-escarpment-60201.herokuapp.com/callback'
 # debug or prod mode
@@ -28,24 +27,30 @@ if len(sys.argv) > 1:
 authorize_uri = 'https://accounts.spotify.com/authorize'
 token_uri = 'https://accounts.spotify.com/api/token'
 
-if LOCAL:
-    db = Redis()
-else:
-    url = urlparse(os.environ.get('REDISCLOUD_URL'))
-    db = Redis(host=url.hostname, port=url.port, password=url.password)
+cred_file = open('private.json')
+creds = json.loads(cred_file.read())
+client_id = creds['client_id']
+client_secret = creds['client_secret']
+cred_file.close()
+
 ## API
 
 @app.route('/api/create_playlist')
 def api_create_playlist():
     user_id = request.args.get('u')
     genres = request.args.get('genres')
-    create_playlist(genres.split(','), user_id, db)
+    db = get_db()
+    create_playlist(genres.split(','), user_id)
     return 'success'
 
+###
+# this is the expected first API call - this kicks off the exploration
+# of the user's library and ultimately returns the genre counts
 @app.route('/api/genre_count')
 def genre_count():
     user_id = request.args.get('u')
-    counter = get_genre_counts(user_id, db)
+    db = get_db()
+    counter = get_genre_counts(user_id)
     response = json.dumps(dict(counter))
     return response
 
@@ -53,9 +58,17 @@ def genre_count():
 def song_genre():
     user_id = request.args.get('u')
     song_id = request.args.get('song_id')
+    db = get_db()
     genres = get_song_genre(user_id, song_id)
     return json.dumps(list(genres))
 
+@app.route('/api/search_artist')
+def search_artist():
+    pass
+
+@app.route('/api/artist_genres')
+def artist_genres():
+    pass
 
 ## OAUTH2 
 
@@ -66,6 +79,8 @@ def home():
 @app.route("/callback")
 def callback():
     code = request.args.get('code')
+    cred_file = open('private.json')
+    creds = json.loads(cred_file.read())
     result = http.post(token_uri, data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -73,10 +88,12 @@ def callback():
         'client_id': client_id,
         'client_secret': client_secret
     })
+
     data = result.json()
     token = data['access_token']
     user_id = str(random.randint(1e5, 1e6 - 1))
-    os.environ[user_id] = token
+    db = get_db()
+    db.set(user_id, token)
 
     return redirect('/explore?u=' + user_id)
     

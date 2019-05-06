@@ -2,19 +2,49 @@ import requests as http
 import os
 import json
 from collections import Counter
+from base64 import b64encode
+from lib.database import get_db
 
 library_tracks_url = 'https://api.spotify.com/v1/me/tracks?limit=50&offset='
 single_track_url = 'https://api.spotify.com/v1/tracks/'
 artists_info_url = 'https://api.spotify.com/v1/artists?ids='
 me_info_url = 'https://api.spotify.com/v1/me'
+token_uri = 'https://accounts.spotify.com/api/token'
 
 def get_request(url, access_token):
     return http.get(url, headers={'Authorization': 'Bearer ' + access_token})
 
+def refresh_master_access_token():
+    db = get_db()
+    cred_file = open('private.json')
+    creds = json.loads(cred_file.read())
+    creds_string = creds['client_id'] + ':' + creds['client_secret']
+    creds_encoded = b64encode(creds_string.encode('utf-8')).decode('utf-8')
+
+    auth_response = http.post(token_uri, data = {
+        'grant_type': 'client_credentials'
+    }, headers = {
+        'Authorization': 'Bearer ' + creds_encoded
+    }).json()
+
+    db.set('master_access_token', auth_response['access_token'])
+    cred_file.close()
+
+def get_request_master_token(url):
+    db = get_db()
+    access_token = db.get('master_access_token').decode('utf-8')
+    response = http.get(url, headers={'Authorization': 'Bearer ' + access_token})
+    if response.status_code >= 300:
+        refresh_master_access_token()
+        response = http.get(url, headers={'Authorization': 'Bearer ' + access_token})
+    return response
+
 def get_access_token(user_id):
-    return os.environ[user_id]
+    db = get_db()
+    return db.get(user_id).decode('utf-8')
 
 def get_song_genre(user_id, song_id):
+    db = get_db()
     access_token = get_access_token(user_id)
     track = get_request(single_track_url + song_id, access_token).json()
 
@@ -31,9 +61,17 @@ def get_song_genre(user_id, song_id):
     
     return set(genres)
 
-def construct_user_library(access_token, db):
+def get_artist_genre(artist_id):
+    db = get_db()
+    pass
+
+def search_artist(artist_query):
+    db = get_db()
+    pass
+
+def construct_user_library(access_token):
     first_response = get_request(library_tracks_url + '0', access_token).json()
-    library = [] # each element will be a dict with keys 'id', 'artists', and 'genres'
+    library = [] # each element is a track object, a dict with keys 'id', 'artists', and 'genres'
     library_artists = [] # list of artist ids
     for track in first_response['items']:
         artists = []
@@ -80,8 +118,12 @@ def construct_user_library(access_token, db):
         track_obj['genres'] = track_genres
     return library, Counter(genres)
 
-def create_playlist(genres, user_id, db):
-    library = json.loads(db.get(user_id).decode('utf-8'))
+
+## TODO
+# title can be too long - maybe custom title as well?
+def create_playlist(genres, user_id):
+    db = get_db()
+    library = json.loads(db.get(user_id + '_library').decode('utf-8'))
     access_token = get_access_token(user_id)
     user_id = get_request(me_info_url, access_token).json()['id']
 
@@ -106,13 +148,13 @@ def create_playlist(genres, user_id, db):
         add_tracks_response = http.post(add_tracks_playlist_url, data=json.dumps({
             'uris': ['spotify:track:' + x for x in request_ids]
         }), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
-        print(add_tracks_response)
 
-def get_genre_counts(user_id, db):
+def get_genre_counts(user_id):
+    db = get_db()
     # this function returns the user's genre count, but it also stores the user's 
     # library in redis
     access_token = get_access_token(user_id)
-    library, genre_counter = construct_user_library(access_token, db)
-    db.set(user_id, json.dumps(library))
+    library, genre_counter = construct_user_library(access_token)
+    db.set(user_id + '_library', json.dumps(library))
     return genre_counter
     
