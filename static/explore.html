@@ -36,13 +36,14 @@
                 <button v-on:click="unselect_genres()">Unselect Genres</button>
             </div>
         </div>
-        <p>Search for a genre</p>
-        <input v-model="genre_query">
-        <ul>
-            <li style="list-style: none;" v-for="genre in genre_matches">
-                <a v-on:click="select_genre(genre)">{{ genre }}</a>
-            </li>
-        </ul>
+        <p>Filter <input v-model="genre_query"></p>
+        <div class="uk-panel uk-panel-scrollable uk-margin uk-margin-left uk-margin-right">
+            <ul>
+                <li style="list-style: none;" v-for="genre in genre_matches">
+                    <a v-on:click="select_genre(genre)">{{ genre }}</a>
+                </li>
+            </ul>
+        </div>
         <!-- TOOD: add functionality to get genres for a user-provided spotify artist -->
     </div>
 </div>

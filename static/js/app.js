@@ -8,7 +8,7 @@ var app = new Vue({
     el: '#app',
     data: {
         genre_query: '',
-        circles: [],
+        selected_circles: [],
         all_circles: []
     },
     methods: {
@@ -17,16 +17,31 @@ var app = new Vue({
         },
         // set all circles back to pink, remove from circles array
         unselect_genres: function () {
-            for (var i = 0; i < this.circles.length; i++) {
-                this.circles[i].fill({color: '#f06'});
+            var limit = this.selected_circles.length
+            for (var i = 0; i < limit; i++) {
+                this.selected_circles[0].toggle_select()
             }
-            this.circles = [];
+            console.log(this.selected_circles)
+            this.selected_circles = [];
         },
+        // TODO: 
+        // doesn't change color of the respective circle
         select_genre: function (genre) {
             for (var i = 0; i < this.all_circles.length; i++) {
                 var circle = this.all_circles[i]
                 if (circle.genre === genre) {
-                    this.circles.push(circle)
+                    circle.toggle_select()
+                    break
+                }
+            }
+        },
+        add_selected_circle: function (circle) {
+            this.selected_circles.push(circle)
+        },
+        remove_selected_circle: function (circle) {
+            for (var i = 0; i < this.selected_circles.length; i++) {
+                if (this.selected_circles[i] == circle) {
+                    this.selected_circles.splice(i, 1)
                     break
                 }
             }
@@ -35,31 +50,28 @@ var app = new Vue({
     computed: {
         genres_display: function () {
             var str = '';
-            for (var i = 0; i < this.circles.length; i++) {
-                str += this.circles[i].genre + ', '
+            for (var i = 0; i < this.selected_circles.length; i++) {
+                str += this.selected_circles[i].genre + ', '
             }
             return str.substring(0, str.length - 2)
         },
         genres_string_list: function () {
             var str = '';
-            for (var i = 0; i < this.circles.length; i++) {
-                str += this.circles[i].genre + ','
+            for (var i = 0; i < this.selected_circles.length; i++) {
+                str += this.selected_circles[i].genre + ','
             }
             return str.substring(0, str.length - 1)
         },
         genre_matches: function () {
-            if (this.genre_query != "") {
-                var matches = []
-                for (var i = 0; i < this.all_circles.length; i++) {
-                    var genre = this.all_circles[i].genre
-                    if (genre.includes(this.genre_query)) {
-                        matches.push(genre)
-                    }
+            var matches = []
+            for (var i = 0; i < this.all_circles.length; i++) {
+                var genre = this.all_circles[i].genre
+                if (genre.includes(this.genre_query)) {
+                    matches.push(genre)
                 }
-                return matches
-            } else {
-                return []
             }
+            matches.sort()
+            return matches
         }
     }
 })
@@ -176,17 +188,28 @@ function draw_circle(point, genre) {
     var _circle = draw.circle(point.r * 2).move(point.cx - point.r, point.cy - point.r).attr({fill: '#f06'})
     _circle.genre = genre
     _circle.selected = false
+    _circle.toggle_select = function() {
+        console.log(this.genre)
+        if (this.selected === true) {
+            this.fill({color: '#f06'})
+            this.selected = false
+            app.remove_selected_circle(this)
+        } else {
+            this.fill({color: '#000'})
+            this.selected = true
+            app.add_selected_circle(this)
+        }
+    }
     _circle.mouseover(function() {
-        this.fill({ color: '#000' })
+        if (!this.selected)
+            this.fill({ color: '#000' })
     })
     _circle.mouseout(function() {
         if (!this.selected)
             this.fill({color: '#f06'})
     })
     _circle.click(function() {
-        this.fill({color: '#000'})
-        this.selected = true
-        app.circles.push(this)
+        this.toggle_select()
       })
     app.all_circles.push(_circle)
     return _circle
