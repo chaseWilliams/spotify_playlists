@@ -1,5 +1,6 @@
 from flask import g
 from redis import Redis
+from urllib.parse import urlparse
 import sys
 
 def get_db():
