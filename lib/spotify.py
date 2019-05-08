@@ -1,15 +1,17 @@
-import requests as http
-import os
-import json
 from collections import Counter
 from base64 import b64encode
 from lib.database import get_db
+import requests as http
+import os
+import json
 
 library_tracks_url = 'https://api.spotify.com/v1/me/tracks?limit=50&offset='
 single_track_url = 'https://api.spotify.com/v1/tracks/'
 artists_info_url = 'https://api.spotify.com/v1/artists?ids='
+single_artist_info_url = 'https://api.spotify.com/v1/artists/'
 me_info_url = 'https://api.spotify.com/v1/me'
 token_uri = 'https://accounts.spotify.com/api/token'
+search_url = 'https://api.spotify.com/v1/search'
 
 def get_request(url, access_token):
     return http.get(url, headers={'Authorization': 'Bearer ' + access_token})
@@ -24,15 +26,21 @@ def refresh_master_access_token():
     auth_response = http.post(token_uri, data = {
         'grant_type': 'client_credentials'
     }, headers = {
-        'Authorization': 'Bearer ' + creds_encoded
+        'Authorization': 'Basic ' + creds_encoded
     }).json()
+
+    print(auth_response)
 
     db.set('master_access_token', auth_response['access_token'])
     cred_file.close()
 
 def get_request_master_token(url):
     db = get_db()
-    access_token = db.get('master_access_token').decode('utf-8')
+    access_token = db.get('master_access_token')
+    if access_token == None:
+        refresh_master_access_token()
+        access_token = db.get('master_access_token')
+    access_token = access_token.decode('utf-8')
     response = http.get(url, headers={'Authorization': 'Bearer ' + access_token})
     if response.status_code >= 300:
         refresh_master_access_token()
@@ -62,12 +70,13 @@ def get_song_genre(user_id, song_id):
     return set(genres)
 
 def get_artist_genre(artist_id):
-    db = get_db()
-    pass
+    return get_request_master_token(single_artist_info_url + artist_id).json()['genres']
 
 def search_artist(artist_query):
-    db = get_db()
-    pass
+    data = get_request_master_token(search_url + 
+                    '?q={0}&type=artist&limit=5'.format(artist_query)).json()
+    print(data)
+    return data['artists']['items']
 
 def construct_user_library(access_token):
     first_response = get_request(library_tracks_url + '0', access_token).json()
@@ -128,8 +137,10 @@ def create_playlist(genres, user_id):
     user_id = get_request(me_info_url, access_token).json()['id']
 
     create_playlist_url = 'https://api.spotify.com/v1/users/{0}/playlists'.format(user_id)
-
-    create_response = http.post(create_playlist_url, data=json.dumps({'name': ','.join(genres)}), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
+    playlist_name = ','.join(genres)
+    if len(playlist_name) > 50:
+        playlist_name = playlist_name[:47] + '...'
+    create_response = http.post(create_playlist_url, data=json.dumps({'name': playlist_name}), headers={'Authorization': 'Bearer ' + access_token, 'Content-Type': 'application/json'}).json()
 
     playlist_id = create_response['id']
     add_tracks_playlist_url = 'https://api.spotify.com/v1/playlists/{0}/tracks'.format(playlist_id)

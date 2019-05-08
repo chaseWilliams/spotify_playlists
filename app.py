@@ -1,14 +1,13 @@
 from flask import Flask, redirect, request, g
 from redis import Redis
+from lib.spotify import get_genre_counts, create_playlist, get_song_genre, refresh_master_access_token, \
+    search_artist, get_artist_genre
+from lib.database import get_db
+import requests as http
 import os
 import sys
-import requests as http
 import json
 import random
-from collections import Counter
-from lib.spotify import get_genre_counts, create_playlist, get_song_genre, refresh_master_access_token
-from lib.database import get_db
-from urllib.parse import urlparse
 
 app = Flask(__name__)
 ###
@@ -49,7 +48,6 @@ def api_create_playlist():
 @app.route('/api/genre_count')
 def genre_count():
     user_id = request.args.get('u')
-    db = get_db()
     counter = get_genre_counts(user_id)
     response = json.dumps(dict(counter))
     return response
@@ -58,17 +56,20 @@ def genre_count():
 def song_genre():
     user_id = request.args.get('u')
     song_id = request.args.get('song_id')
-    db = get_db()
     genres = get_song_genre(user_id, song_id)
     return json.dumps(list(genres))
 
 @app.route('/api/search_artist')
-def search_artist():
-    pass
+def _search_artist(): # underscore to avoid naming conflict
+    artist_query = request.args.get('q')
+    result = search_artist(artist_query)
+    return json.dumps(result)
 
 @app.route('/api/artist_genres')
 def artist_genres():
-    pass
+    artist_id = request.args.get('id')
+    result = get_artist_genre(artist_id)
+    return json.dumps(result)
 
 ## OAUTH2 
 
