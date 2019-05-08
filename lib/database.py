@@ -2,6 +2,7 @@ from flask import g
 from redis import Redis
 from urllib.parse import urlparse
 import sys
+import os
 
 def get_db():
     if not hasattr(g, 'db'):
