@@ -8,8 +8,21 @@ var app = new Vue({
     el: '#app',
     data: {
         genre_query: '',
+        artist_query: '',
         selected_circles: [],
-        all_circles: []
+        all_circles: [],
+        artist_query_matches: [],
+        selected_artist: {}
+    },
+    created: function () {
+        this.debounced_search_artist = _.debounce(this.search_artist, 500)
+    },
+    watch: {
+        artist_query: function () {
+            if (this.artist_query != '') {
+                this.debounced_search_artist()
+            }
+        }
     },
     methods: {
         create_playlist: function () {
@@ -34,6 +47,15 @@ var app = new Vue({
                     break
                 }
             }
+        },
+        search_artist: function () {
+            console.log('search artist called')
+            $.ajax('/api/search_artist?q=' + this.artist_query).done(function (data) {
+                app.$set(app, 'artist_query_matches', JSON.parse(data))
+            })
+        },
+        select_artist: function (artist) {
+            this.selected_artist = artist
         },
         add_selected_circle: function (circle) {
             this.selected_circles.push(circle)
@@ -71,6 +93,14 @@ var app = new Vue({
                 }
             }
             matches.sort()
+            return matches
+        },
+        artist_query_match_names: function () {
+            console.log('called query match names')
+            var matches = []
+            for (var i = 0; i < this.artist_query_matches.length; i++) {
+                matches.push(this.artist_query_matches[i].name)
+            }
             return matches
         }
     }

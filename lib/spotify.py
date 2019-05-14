@@ -44,6 +44,7 @@ def get_request_master_token(url):
     response = http.get(url, headers={'Authorization': 'Bearer ' + access_token})
     if response.status_code >= 300:
         refresh_master_access_token()
+        access_token = db.get('master_access_token').decode('utf-8')
         response = http.get(url, headers={'Authorization': 'Bearer ' + access_token})
     return response
 

@@ -1,0 +1,7 @@
+*.less linguist-vendored
+app.css linguist-vendored
+svg.min.js linguist-vendored
+vue.js linguist-vendored
+
+custom_theme.less linguist-vendored=false
+private.json merge=ours

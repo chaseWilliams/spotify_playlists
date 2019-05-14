@@ -45,6 +45,21 @@
             </ul>
         </div>
         <!-- TOOD: add functionality to get genres for a user-provided spotify artist -->
+        <p>Get the genre of an artist</p>
+        <input v-model="artist_query">
+        <div class="uk-panel uk-panel-scrollable uk-margin uk-margin-left uk-margin-right">
+            <ul>
+                <li style="list-style: none;" v-for="artist in artist_query_matches">
+                    <a v-on:click="select_artist(artist)">{{ artist.name }}</a>
+                </li>
+            </ul>
+        </div>
+        <p>{{selected_artist.name}}</p>
+        <ul>
+            <li style="list-style: none;" v-for="genre in selected_artist.genres">
+                <a v-on:click="select_genre(genre)">{{ genre }}</a>
+            </li>
+        </ul>
     </div>
 </div>
 </div>
@@ -59,6 +74,7 @@
 -->
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="static/js/svg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
 <script type="text/javascript" src="static/js/app.js"></script>
 </body>
 </html>

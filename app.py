@@ -10,6 +10,7 @@ import json
 import random
 
 app = Flask(__name__)
+
 ###
 # INITIAL SET UP
 ###
@@ -32,7 +33,9 @@ client_id = creds['client_id']
 client_secret = creds['client_secret']
 cred_file.close()
 
+######
 ## API
+######
 
 @app.route('/api/create_playlist')
 def api_create_playlist():
@@ -71,7 +74,9 @@ def artist_genres():
     result = get_artist_genre(artist_id)
     return json.dumps(result)
 
-## OAUTH2 
+#########
+## OAUTH2
+######### 
 
 @app.route("/")
 def home():
