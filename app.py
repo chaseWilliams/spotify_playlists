@@ -99,7 +99,7 @@ def callback():
     token = data['access_token']
     user_id = str(random.randint(1e5, 1e6 - 1))
     db = get_db()
-    db.set(user_id, token)
+    db.set(user_id, token, ex=60 * 60)
 
     return redirect('/explore?u=' + user_id)
     

@@ -167,6 +167,6 @@ def get_genre_counts(user_id):
     # library in redis
     access_token = get_access_token(user_id)
     library, genre_counter = construct_user_library(access_token)
-    db.set(user_id + '_library', json.dumps(library))
+    db.set(user_id + '_library', json.dumps(library), ex=60 * 60)
     return genre_counter
     
