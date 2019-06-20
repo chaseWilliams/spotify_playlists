@@ -252,7 +252,7 @@ function distance(a, b) {
 function overlaps(point, points) {
     for (i = 0; i < points.length; i++) {
         test_point = points[i]
-        if (distance(point, test_point) <= point.r + test_point.r) {
+        if (distance(point, test_point) < point.r + test_point.r) {
             return true
         }
     }
